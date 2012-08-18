@@ -1,3 +1,6 @@
+[B]v1.1.5 (18.08.2012)[/B]
+- Update      : More artists properties are set
+
 [B]v1.1.4 (02.05.2012)[/B]
 - Fix         : Works now from favorites
 
