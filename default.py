@@ -22,9 +22,7 @@ def playSong(artistid, albumid, pos):
     result = json.loads(json_songs)
     if result["result"] != None:
         songs = result["result"]["songs"]
-        
-        print songs
-        
+
         for content in songs:
             liz = makeListItem(content["label"], content["thumbnail"], content["fanart"], content["track"], content["rating"], content["duration"], content["album"], content["artist"], content["genre"], content["year"], content["comment"])
             playlist.add( content["file"], liz )
@@ -79,7 +77,6 @@ def showAlbums(artistid):
 def addAlbumsDir(name, artistid, albumid, mode, iconimage, fanart, date, artist, genre):
     u=sys.argv[0]+"?artistid="+str(artistid)+"&albumid="+str(albumid)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name.encode('utf-8'))
     ok=True
-    print "Date " + str(date)
     if str(date) == "0":
         datum = " "
     else:
@@ -137,9 +134,6 @@ def getParams():
 
     return param
 
-
-
-print "allartists called with: " + sys.argv[2]
 params=getParams()
 
 mode=None
