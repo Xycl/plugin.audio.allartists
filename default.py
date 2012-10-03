@@ -24,7 +24,7 @@ def playSong(artistid, albumid, pos):
         songs = result["result"]["songs"]
 
         for content in songs:
-            liz = makeListItem(content["label"], content["thumbnail"], content["fanart"], content["track"], content["rating"], content["duration"], content["album"], content["artist"], content["genre"], content["year"], content["comment"])
+            liz = makeListItem(content["label"], content["thumbnail"], content["fanart"], content["track"], content["rating"]-48, content["duration"], content["album"], content["artist"], content["genre"], content["year"], content["comment"])
             playlist.add( content["file"], liz )
             counter=counter+1
 
@@ -45,7 +45,22 @@ def showSongs(artistid, albumid):
     if result["result"] != None:
         songs = result["result"]["songs"]
         for content in songs:
-            listitem = addSong(content["label"], artistid, albumid, str(counter),3, content["thumbnail"], content["fanart"], content["track"], content["rating"], content["duration"], content["album"], content["artist"], content["genre"], content["year"], content["comment"], content["file"])
+            listitem = addSong(content["label"]
+                             , artistid
+                             , albumid
+                             , str(counter)
+                             ,3
+                             , content["thumbnail"]
+                             , content["fanart"]
+                             , content["track"] if "track" in content else ""
+                             , content["rating"]-48
+                             , content["duration"]
+                             , content["album"]
+                             , content["artist"]
+                             , content["genre"] if "genre" in content else ""
+                             , content["year"] if "year" in content else ""
+                             , content["comment"] if "comment" in content else ""
+                             , content["file"])
             counter=counter+1
 
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_TRACKNUM)
@@ -68,7 +83,15 @@ def showAlbums(artistid):
     if result["result"] != None:
         albums = result["result"]["albums"]
         for content in albums:
-            addAlbumsDir(content["label"], artistid, content["albumid"], 2, content["thumbnail"], content["fanart"], content["year"], content["artist"], content["genre"])
+            addAlbumsDir(content["label"]
+                       , artistid
+                       , content["albumid"]
+                       , 2
+                       , content["thumbnail"]
+                       , content["fanart"]
+                       , content["year"] if "year" in content else ""
+                       , content["artist"] if "artist" in content else ""
+                       , content["genre"] if "genre" in content else "")
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE)
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE)
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_DATE)
@@ -98,7 +121,16 @@ def showArtists():
         totalitems = len(artists)
         list = []
         for content in artists:
-            list.append(addArtistsDir(content["label"], content["artistid"], 1, content["thumbnail"], content["fanart"], content["description"], content["genre"], content["style"], totalitems))
+                list.append(addArtistsDir(content["label"]
+                                        , content["artistid"]
+                                        , 1
+                                        , content["thumbnail"]
+                                        , content["fanart"]
+                                        , content["description"] if "description" in content else ""
+                                        , content["genre"] if "genre" in content else ""
+                                        , content["style"] if "style" in content else ""
+                                        , totalitems))
+
 
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE)
 
