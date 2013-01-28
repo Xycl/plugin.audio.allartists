@@ -42,7 +42,7 @@ def showSongs(artistid, albumid):
 
     json_songs = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "AudioLibrary.GetSongs", "params": { "sort": { "ignorearticle": true, "method": "track", "order": "ascending" }, "properties": ["file", "thumbnail", "fanart", "track", "rating", "duration", "album", "artist", "genre", "year", "comment"], "albumid": ' + albumid + ', "artistid": ' + str(artistid) + '}, "id": 1}')
     result = json.loads(json_songs)
-    if result["result"] != None:
+    if "result" in result:
         songs = result["result"]["songs"]
         for content in songs:
             listitem = addSong(content["label"]
@@ -77,28 +77,33 @@ def addSong(name, artistid, albumid, pos,mode,iconimage, fanart, track, rating, 
     ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=False)
     return ok
         
-def showAlbums(artistid):
-    json_album = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "AudioLibrary.GetAlbums", "params": {"sort": { "ignorearticle": true, "method": "album", "order": "ascending" }, "properties": ["thumbnail", "fanart", "year", "artist", "genre"], "artistid": ' + artistid + '}, "id": 1}')
+def showAlbums(artistid, artistname):
+    json_album = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "AudioLibrary.GetAlbums", "params": {"sort": { "ignorearticle": true, "method": "album", "order": "ascending" }, "properties": ["thumbnail", "fanart", "year", "artist", "genre"], "filter": {"artistid": ' + artistid + '}}, "id": 1}')
+    #json_album = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "AudioLibrary.GetAlbums", "filter": { "artistid": "' + artistid + '"}, "id": "AudioLibrary.GetAlbums"}')
     result = json.loads(json_album)
-    if result["result"] != None:
+    if "result" in result:
+
         albums = result["result"]["albums"]
         for content in albums:
+            print content["artist"]
+            print content["label"]
             addAlbumsDir(content["label"]
                        , artistid
                        , content["albumid"]
-                       , 2
-                       , content["thumbnail"]
-                       , content["fanart"]
+                       , content["thumbnail"] if "thumbnail" in content else ""
+                       , content["fanart"] if "fanart" in content else ""
                        , content["year"] if "year" in content else ""
-                       , content["artist"] if "artist" in content else ""
+                       , artistname
                        , content["genre"] if "genre" in content else "")
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE)
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE)
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_DATE)
+    else :
+        print result
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
-def addAlbumsDir(name, artistid, albumid, mode, iconimage, fanart, date, artist, genre):
-    u=sys.argv[0]+"?artistid="+str(artistid)+"&albumid="+str(albumid)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name.encode('utf-8'))
+def addAlbumsDir(name, artistid, albumid, iconimage, fanart, date, artist, genre):
+    u=sys.argv[0]+"?artistid="+str(artistid)+"&albumid="+str(albumid)+"&mode=2&albumname="+urllib.quote_plus(name.encode('utf-8'))+"&artistname="+urllib.quote_plus(artist.encode('utf-8'))
     ok=True
     if str(date) == "0":
         datum = " "
@@ -121,6 +126,7 @@ def showArtists():
         totalitems = len(artists)
         list = []
         for content in artists:
+
                 list.append(addArtistsDir(content["label"]
                                         , content["artistid"]
                                         , 1
@@ -131,20 +137,21 @@ def showArtists():
                                         , content["style"] if "style" in content else ""
                                         , totalitems))
 
-
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE)
 
     xbmcplugin.endOfDirectory(int(sys.argv[1]))
 
 def addArtistsDir(name, artistid, mode, iconimage, fanart, description, genre, style, items):
-    u=sys.argv[0]+"?artistid="+str(artistid)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name.encode('utf-8'))
+    u=sys.argv[0]+"?artistid="+str(artistid)+"&mode="+str(mode)+"&artistname="+urllib.quote_plus(name.encode('utf-8'))
+    #print u
     ok=True
     liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-    liz.setInfo( type="music", infoLabels={ "artist": name , "artistid": artistid} )
-    liz.setProperty( "Fanart_Image", fanart)
-    liz.setProperty( "Artist_Description", description )
-    liz.setProperty( "Artist_Genre", genre )
-    liz.setProperty( "Artist_Style", style )
+    liz.setInfo( type="music", infoLabels={ "artist": name } )
+    if fanart != "":
+        liz.setProperty( "Fanart_Image", fanart)
+    if description!= "":
+        liz.setProperty( "Artist_Description", description )
+
     ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=True, totalItems=items)
     return(u,liz,True)
         
@@ -172,7 +179,9 @@ mode=None
 pos=None
 artistid=None
 albumid=None
+artistname=None
 
+print sys.argv[2]
 
 try:
     artistid=urllib.unquote_plus(params["artistid"])
@@ -193,13 +202,17 @@ try:
     mode=int(params["mode"])
 except:
     pass
+    
+try:
+    artistname=int(params["artistname"])
+except:
+    pass
 
-"""
 print "Mode: "     + str(mode)
 print "ArtistID: " + str(artistid)
 print "AlbumID: "  + str(albumid)
 print "SongPos: "  + str(pos)
-"""
+
 xbmcplugin.setPluginCategory(int(sys.argv[1]), 'Music-Library')
 
 if mode==None or artistid==None:
@@ -211,7 +224,7 @@ if mode==None or artistid==None:
 elif mode==1:
     #print ""+url
     xbmcplugin.setContent(int(sys.argv[1]), 'albums')
-    showAlbums(artistid)
+    showAlbums(artistid, artistname)
     xbmcplugin.setContent(int(sys.argv[1]), 'albums')
 
 elif mode==2:
