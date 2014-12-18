@@ -1,3 +1,6 @@
+[B]v13.0.0 (18.12.2014)[/B]
+- Fix         : Compatible with Gotham
+
 [B]v1.1.5 (03.10.2012)[/B]
 - Fix         : JSON return values tested for null values
 
