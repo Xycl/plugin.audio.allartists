@@ -1,3 +1,6 @@
+[B]v14.0.0 (15.01.2015)[/B]
+- Fix         : Helix version
+
 [B]v13.0.0 (18.12.2014)[/B]
 - Fix         : Compatible with Gotham
 

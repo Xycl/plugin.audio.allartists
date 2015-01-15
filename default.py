@@ -11,16 +11,18 @@ import json
 
 # All artists by xycl
 
-def playSong(artistid, albumid, pos):
+def playSong(artist, album, pos):
     # create a playlist
     playlist = xbmc.PlayList(0)
     # clear the playlist
     playlist.clear()
     counter=0
 
-    json_request = '{"jsonrpc": "2.0", "method": "AudioLibrary.GetSongs", "params": { "sort": { "ignorearticle": true, "method": "track", "order": "ascending" }, "properties": ["file", "thumbnail", "fanart", "track", "rating", "duration", "album", "artist", "genre", "year", "comment"], "filter" : {"albumid": ' + albumid + '}}, "id": "libSongs"}'
+    json_request = '{"jsonrpc": "2.0", "method": "AudioLibrary.GetSongs", "params": { "sort": { "ignorearticle": true, "method": "track", "order": "ascending" }, "properties": ["file", "thumbnail", "fanart", "track", "rating", "duration", "album", "artist", "genre", "year", "comment"], "filter": {"and": [{"operator": "contains", "field": "artist", "value": "'+artist+'"}, {"operator": "contains", "field": "album", "value": "'+album+'"}]}}, "id": "libSongs"}'
+    
     json_songs = xbmc.executeJSONRPC(json_request)
     result = json.loads(json_songs)
+    
     if result["result"] != None:
         songs = result["result"]["songs"]
 
@@ -37,28 +39,28 @@ def makeListItem(label, thumbnail, fanart, track, rating, duration, album, artis
     liz.setProperty( "Fanart_Image", fanart )
     return liz
     
-def showSongs(artistid, albumid):
+def showSongs(artist, album):
 
     counter=0
-    #json_request = '{"jsonrpc": "2.0", "method": "AudioLibrary.GetSongs", "params": { "sort": { "ignorearticle": true, "method": "track", "order": "ascending" }, "properties": ["file", "thumbnail", "fanart", "track", "rating", "duration", "album", "artist", "genre", "year", "comment"], "filter" : {"albumid": ' + albumid + ', "artistid": ' + str(artistid) + '}}, "id": "libSongs"}'
-    json_request = '{"jsonrpc": "2.0", "method": "AudioLibrary.GetSongs", "params": { "sort": { "ignorearticle": true, "method": "track", "order": "ascending" }, "properties": ["file", "thumbnail", "fanart", "track", "rating", "duration", "album", "artist", "genre", "year", "comment"], "filter" : {"albumid": ' + albumid + '}}, "id": "libSongs"}'
+
+    json_request = '{"jsonrpc": "2.0", "method": "AudioLibrary.GetSongs", "params": { "sort": { "ignorearticle": true, "method": "track", "order": "ascending" }, "properties": ["file", "thumbnail", "fanart", "track", "rating", "duration", "album", "artist", "genre", "year", "comment"], "filter": {"and": [{"operator": "contains", "field": "artist", "value": "'+artist+'"}, {"operator": "contains", "field": "album", "value": "'+album+'"}]}}, "id": "libSongs"}'
+
     json_songs = xbmc.executeJSONRPC(json_request)
     result = json.loads(json_songs)
+
     if result.get("result", None) != None:
         songs = result["result"]["songs"]
         for content in songs:
             listitem = addSong(content["label"]
-                             , artistid
-                             , albumid
                              , str(counter)
-                             ,3
+                             , 3
                              , content["thumbnail"]
                              , content["fanart"]
                              , content["track"] if "track" in content else ""
                              , content["rating"]-48
                              , content["duration"]
                              , content["album"]
-                             , content["artist"]
+                             , artist
                              , content["genre"] if "genre" in content else ""
                              , content["year"] if "year" in content else ""
                              , content["comment"] if "comment" in content else ""
@@ -70,52 +72,47 @@ def showSongs(artistid, albumid):
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_SONG_RATING)
     
 
-def addSong(name, artistid, albumid, pos,mode,iconimage, fanart, track, rating, duration, album, artist, genre, year, comment, file):
-    u=sys.argv[0]+"?artistid="+str(artistid)+"&albumid="+str(albumid)+"&pos="+str(pos)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name.encode('utf-8'))
+def addSong(name, pos, mode, iconimage, fanart, track, rating, duration, album, artist, genre, year, comment, file):
+    u=sys.argv[0]+"?artist="+urllib.quote_plus(artist.encode('utf-8'))+"&album="+urllib.quote_plus(album.encode('utf-8'))+"&pos="+str(pos)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name.encode('utf-8'))
     ok=True
-    liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
+    liz=xbmcgui.ListItem(artist + " - " + name, artist, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
     liz.setInfo( type="music", infoLabels={ "title": name, "tracknumber": track, "rating": str(rating), "duration": duration, "album":album, "artist":artist, "genre": genre, "year":year, "comment":comment } )
     liz.setProperty( "Fanart_Image", fanart )
     ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=u, listitem=liz, isFolder=False)
     return ok
         
-def showAlbums(artistid):
+def showAlbums(artist):
+    json_request = '{"jsonrpc": "2.0", "method": "AudioLibrary.GetAlbums", "params": { "filter" : {"artist": "' + artist + '"}, "limits": { "start" : 0, "end": 50 }, "properties": ["playcount", "artist", "genre", "rating", "thumbnail", "fanart", "year", "mood", "style"], "sort": { "order": "ascending", "method": "album", "ignorearticle": true } }, "id": "libAlbums"}'
 
-    #json_request = '{"jsonrpc": "2.0", "method": "AudioLibrary.GetAlbums", "params": {"sort": { "ignorearticle": true, "method": "album", "order": "ascending" }, "properties": ["thumbnail", "fanart", "year", "artist", "genre"], "artistid": ' + artistid + '}, "id": 1}')
-    json_request = '{"jsonrpc": "2.0", "method": "AudioLibrary.GetAlbums", "params": { "filter" : {"artistid": ' + artistid + '}, "limits": { "start" : 0, "end": 50 }, "properties": ["playcount", "artist", "genre", "rating", "thumbnail", "fanart", "year", "mood", "style"], "sort": { "order": "ascending", "method": "album", "ignorearticle": true } }, "id": "libAlbums"}'
     json_album = xbmc.executeJSONRPC(json_request)
-
     result = json.loads(json_album)
-    if result.get("result", None) != None:
+    
+    if result.get("result", None) != None and "albums" in result["result"]:
         albums = result["result"]["albums"]
         for content in albums:
             addAlbums(content["label"]
-                       , artistid
-                       , content["albumid"]
+                       , artist
+                       , content["label"]
                        , 2
                        , content["thumbnail"]
                        , content["fanart"]
                        , content["year"] if "year" in content else ""
-                       , content["artist"] if "artist" in content else ""
                        , content["genre"] if "genre" in content else "")
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_ALBUM_IGNORE_THE)
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_ARTIST_IGNORE_THE)
         xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_DATE)
 
 
-def addAlbums(name, artistid, albumid, mode, iconimage, fanart, date, artist, genre):
-    try:
-        artist = artist[0]
-    except:
-        pass
-    u=sys.argv[0]+"?artistid="+str(artistid)+"&albumid="+str(albumid)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name.encode('utf-8'))
+def addAlbums(name, artist, album, mode, iconimage, fanart, date, genre):
+    u=sys.argv[0]+"?artist="+urllib.quote_plus(artist.encode('utf-8'))+"&album="+urllib.quote_plus(album.encode('utf-8'))+"&mode="+str(mode)+"&name="+urllib.quote_plus(name.encode('utf-8'))
+
     ok=True
     if str(date) == "0":
         datum = " "
     else:
         datum = str(date)
 
-    liz=xbmcgui.ListItem(label=artist +" - "+name, label2=datum, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
+    liz=xbmcgui.ListItem(label=artist +" - "+name, label2=artist, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
     liz.setInfo( type="music", infoLabels={ "album": name , "year":date, "genre": genre,"artist":artist, "title": name, "Title": artist} )
     liz.setProperty( "Fanart_Image", fanart )
     liz.setLabel2(datum)
@@ -123,16 +120,17 @@ def addAlbums(name, artistid, albumid, mode, iconimage, fanart, date, artist, ge
 
         
 def showArtists():
-    json_artists = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "AudioLibrary.GetArtists", "params": {"properties": ["thumbnail", "fanart", "genre", "description", "style"], "albumartistsonly": false, "sort": { "ignorearticle": true, "method": "artist", "order": "ascending" } }, "id": 1}')
+    json_request= '{"jsonrpc": "2.0", "method": "AudioLibrary.GetArtists", "params": {"properties": ["thumbnail", "fanart", "genre", "description", "style"], "albumartistsonly": false, "sort": { "ignorearticle": true, "method": "artist", "order": "ascending" } }, "id": 1}'
+    
+    json_artists = xbmc.executeJSONRPC(json_request)
     result = json.loads(json_artists)
 
-    if result["result"] != None:
+    if result["result"] != None and "artists" in result["result"]:
         artists = result["result"]["artists"]
         totalitems = len(artists)
-        #list = []
         for content in artists:
             addArtists(content["label"]
-                                        , content["artistid"]
+                                        , content["artist"]
                                         , 1
                                         , content["thumbnail"]
                                         , content["fanart"]
@@ -147,8 +145,9 @@ def showArtists():
 
 
 
-def addArtists(name, artistid, mode, iconimage, fanart, description, genres, styles, items):
-    u=sys.argv[0]+"?artistid="+str(artistid)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name.encode('utf-8'))
+def addArtists(name, artist, mode, iconimage, fanart, description, genres, styles, items):
+    u=sys.argv[0]+"?artist="+urllib.quote_plus(artist.encode('utf-8'))+"&mode="+str(mode)+"&name="+urllib.quote_plus(name.encode('utf-8'))
+
     ok=True
     liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
     liz.setInfo( type="music", infoLabels={ "artist": name } )
@@ -203,17 +202,17 @@ params=getParams()
 
 mode=None
 pos=None
-artistid=None
-albumid=None
+artist=None
+album=None
 
 
 try:
-    artistid=urllib.unquote_plus(params["artistid"])
+    artist=urllib.unquote_plus(params["artist"])
 except:
     pass
         
 try:
-    albumid=urllib.unquote_plus(params["albumid"])
+    album=urllib.unquote_plus(params["album"])
 except:
     pass
         
@@ -227,34 +226,22 @@ try:
 except:
     pass
 
-"""
-print "Mode: "     + str(mode)
-print "ArtistID: " + str(artistid)
-print "AlbumID: "  + str(albumid)
-print "SongPos: "  + str(pos)
-"""
+
 xbmcplugin.setPluginCategory(int(sys.argv[1]), 'Music-Library')
 
-if mode==None or artistid==None:
-    #print ""
+if mode==None or artist==None:
     xbmcplugin.setContent(int(sys.argv[1]), 'artists')
     showArtists()
-    xbmcplugin.setContent(int(sys.argv[1]), 'artists')
 
 elif mode==1:
-    #print ""+url
     xbmcplugin.setContent(int(sys.argv[1]), 'albums')
-    showAlbums(artistid)
-    xbmcplugin.setContent(int(sys.argv[1]), 'albums')
+    showAlbums(artist)
 
 elif mode==2:
-    #print ""+url
     xbmcplugin.setContent(int(sys.argv[1]), 'songs')
-    showSongs(artistid, albumid)
-    xbmcplugin.setContent(int(sys.argv[1]), 'songs')
+    showSongs(artist, album)
 
 elif mode==3:
-    #print ""+url
-    playSong(artistid, albumid, pos)
+    playSong(artist, album, pos)
     
 xbmcplugin.endOfDirectory(int(sys.argv[1]))    
